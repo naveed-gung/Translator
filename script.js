@@ -708,10 +708,19 @@ if (clearBtn) {
         const sourceTextarea = document.getElementById('sourceText');
         const translatedTextDiv = document.querySelector('.target-text-container');
 
+        // Add fade out animation to source text
         sourceTextarea.style.opacity = '0';
+        // Add fade out animation to translated text
+        translatedTextDiv.style.opacity = '0';
+        
         setTimeout(() => {
+            // Clear source text and fade back in
             sourceTextarea.value = '';
             sourceTextarea.style.opacity = '1';
+            
+            // Clear translated text and fade back in
+            translatedTextDiv.innerHTML = '<p class="text-gray-500 dark:text-gray-400 italic">Translation will appear here...</p>';
+            translatedTextDiv.style.opacity = '1';
         }, 300);
     });
 }
