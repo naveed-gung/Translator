@@ -652,6 +652,7 @@ if (textToSpeechBtn) {
         const translatedText = translatedTextDiv.textContent.trim();
         
         if (!translatedText || translatedText === 'Translation will appear here...' || translatedText === 'Please enter some text to translate') {
+            console.log('No text to speak');
             return;
         }
         
@@ -660,16 +661,22 @@ if (textToSpeechBtn) {
         const utterance = new SpeechSynthesisUtterance(translatedText);
         
         utterance.lang = targetLanguageSelect.value;
+        console.log(`Setting utterance language to: ${utterance.lang}`);
         
         utterance.rate = 1.0;  
         utterance.pitch = 1.0; 
         utterance.volume = 1.0;
         
         const voices = window.speechSynthesis.getVoices();
+        console.log(`Available voices: ${voices.length}`);
         const languageVoices = voices.filter(voice => voice.lang.includes(utterance.lang));
+        console.log(`Voices for language ${utterance.lang}: ${languageVoices.length}`);
         if (languageVoices.length > 0) {
             const femaleVoice = languageVoices.find(voice => voice.name.includes('female'));
             utterance.voice = femaleVoice || languageVoices[0];
+            console.log(`Selected voice: ${utterance.voice ? utterance.voice.name : 'None'}`);
+        } else {
+            console.log(`No voices found for language: ${utterance.lang}`);
         }
         
         window.speechSynthesis.speak(utterance);
@@ -690,6 +697,32 @@ if (textToSpeechBtn) {
         console.log('Voices loaded:', window.speechSynthesis.getVoices().length);
     };
 }
+
+const translateText = async (text, fromLang, toLang) => {
+    try {
+        const url = `${API_BASE_URL}${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}&de=example@gmail.com`;
+        console.log(`Translation request URL: ${url}`);
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`Network response was not ok: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Translation API response:', data);
+        
+        if (data && data.responseStatus === 200 && data.responseData) {
+            return data.responseData.translatedText;
+        } else if (data && data.responseStatus !== 200) {
+            throw new Error(`Translation API error: ${data.responseDetails || 'Unknown error'}`);
+        } else {
+            throw new Error('Failed to get translation from API');
+        }
+    } catch (error) {
+        console.error('Translation error:', error);
+        return `Translation service error: ${error.message}. Please try again later.`;
+    }
+};
 
 window.addEventListener('DOMContentLoaded', () => {
     const elements = document.querySelectorAll('main section, .feature-card');
@@ -724,32 +757,6 @@ if (clearBtn) {
         }, 300);
     });
 }
-
-const translateText = async (text, fromLang, toLang) => {
-    try {
-        const url = `${API_BASE_URL}${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}&de=example@gmail.com`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`Network response was not ok: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data && data.responseStatus === 200 && data.responseData) {
-            return data.responseData.translatedText;
-        } else if (data && data.responseStatus !== 200) {
-            throw new Error(`Translation API error: ${data.responseDetails || 'Unknown error'}`);
-        } else {
-            throw new Error('Failed to get translation from API');
-        }
-    } catch (error) {
-        console.error('Translation error:', error);
-        return `Translation service error: ${error.message}. Please try again later.`;
-    }
-};
-
-const translateIcon = document.getElementById('translateIcon');
 
 sourceTextarea.addEventListener('input', () => {
     if (translationTimeout) {
